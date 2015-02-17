@@ -15,9 +15,22 @@ using std::mutex;
 
 vector<thread> workers(6);
 vector<unsigned int> sequence;
+vector<int> results;
+
+
+int iteration = 0;
+
+mutex shared;
 
 void run(int n )
 {
+	while(iteration<workers.size()-1)
+	{
+		shared.lock();
+		results.push_back(sa2a(sequence[iteration]));
+		iteration+=1;
+		shared.unlock();
+	}
 
 }
 
@@ -49,6 +62,20 @@ int main()
 			cout <<"ERROR: Thread Creation Failed";
 			exit(1);
 		}
+	}
+	while(iteration<workers.size()-1)
+	{
+		shared.lock();
+		if(results.size()!=0)
+		{
+			cout <<"sa2a (" << sequence[iteration] <<") = "<<results[iteration];
+		}
+		results.pop_back();
+		shared.unlock();
+	}
+	for(int i = 0; i<workers.size()-1; i++)
+	{
+		workers[i].join();
 	}
 	return 0;
 }
