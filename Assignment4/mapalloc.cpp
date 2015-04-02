@@ -32,12 +32,20 @@ void * Freeaddr = nullptr;
 void *mapalloc( const size_t size)
 {
 	void * addr = mmap(Freeaddr,size,PROT_READ|PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS,-1,0);
-	Freeaddr = (void *)((char *)Freeaddr + size);
-	memoryMapped[addr] = size;
+	if(addr==MAP_FAILED)
+	{
+		return nullptr;
+	}
+	else
+	{ 
+		Freeaddr = (void *)((char *)Freeaddr + size);
+		memoryMapped[addr] = size;
+		return addr;
+	}
 	
 	
 	
-	return addr;
+	
 }
 
 
