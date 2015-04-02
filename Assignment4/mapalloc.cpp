@@ -1,3 +1,8 @@
+/*Arsh Chauhan
+  mapalloc.cpp implentation for CS321 Assignment 4 Exercise A
+  Last Edited 4/1/2015
+*/
+
 #include "mapalloc.h"
 
 

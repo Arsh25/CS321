@@ -1,6 +1,7 @@
 /*Arsh Chauhan
  * Last Modified: 04/02/2015
  * randacc.cpp : random file access using mmap 
+ * CS321 Assignment 4 Exercise B
 */
 
 
@@ -41,6 +42,8 @@ off_t getFileSize(const string & filepath)
 	
 	
 }
+
+// Close the file 
 void closeFile(int fd)
 {
 	cout << "Closing File"<<endl;
@@ -56,11 +59,12 @@ void closeFile(int fd)
 	}
 }
 
+//Read the requested records
 void readFile(string & filepath)
 {
 	int record;
 	off_t fileSize = getFileSize(filepath);
-	int fd = open(filepath.c_str(),O_CREAT|O_RDWR,0644);
+	int fd = open(filepath.c_str(),O_CREAT|O_RDONLY,0644);
 	if(fd == -1)
 	{
 		cout << "Could not open file" << filepath <<" exiting" <<endl;
@@ -70,7 +74,7 @@ void readFile(string & filepath)
 	int request;
 	cout<< "Please enter a record index (0-99): "<<endl;
 	cin >> request;
-	void *addr = mmap(nullptr,fileSize,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+	void *addr = mmap(nullptr,fileSize,PROT_READ,MAP_SHARED,fd,0);
 	
 	
 	if(addr == MAP_FAILED)
@@ -82,12 +86,18 @@ void readFile(string & filepath)
 		
 	}
 	 
-	 char *data = (char*)addr;
-	 record = data[request];
-	 cout<< "Requested record is: "<<record <<endl;
+	 char*data = (char*)addr;
+	 if(data[request+1]=='\n')
+	 {
+		 request = request+1;
+		 cout << "Modified request is :" << request <<endl;
+	 }
+	 cout<< "current request is : "<<request <<endl;
+	 cout<< "Requested record is: "<<data[request]<<data[request+1] <<endl;
 
 }
 
+//Modify the requested record 
 void modifyFile(string & filepath)
 {
 	int fd = open(filepath.c_str(),O_CREAT|O_RDWR,0644);
@@ -105,12 +115,15 @@ void modifyFile(string & filepath)
 		cout << "errno = " << strerror(errno) << endl;;
 		_exit(1);
 	}
-	int request;
-	int data;
+	
+	int request; // User's requested index
+	int data; // Record stored in the the requested index
+	
 	cout << "Enter Record to modify (0-99) : " << endl;
 	cin >> request;
 	cout << "Enter integer to be written at position " <<request << " : " << endl;
 	cin >> data;
+	
 	char * p = (char *)addr;
 	p[request] = data;
 	
@@ -119,6 +132,7 @@ void modifyFile(string & filepath)
 	
 }
 	
+// Display the actions menu 	
 void menu(string & filepath)
 {
 	int choice;
@@ -139,6 +153,7 @@ void menu(string & filepath)
 			case 3: _exit(1);
 				break;
 			default : cout<< "Please enter a valid choice" <<endl;
+				break;
 		}
 	}
 	while(choice!=3);
@@ -146,8 +161,7 @@ void menu(string & filepath)
 	
 int main()
 {
-	string filepath = "randacc.bin";
+	string filepath = "randacc.txt";
 	menu(filepath);
-	
-	
+
 }
