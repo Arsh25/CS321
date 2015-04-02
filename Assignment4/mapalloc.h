@@ -10,7 +10,9 @@
 
 #include<cstddef> // For std::size_t
 #include<sys/mman.h> // For mmap, munmap and related constants  
+
 using std::size_t;
+
 
 // Allocate 'size' bytes using mmap
 void *mapAlloc(const size_t size);

@@ -1,34 +1,52 @@
 #include "mapalloc.h"
 #include<iostream>
 #include<vector>
+#include<map> // for std::map
 
-using std::vector;
+using std::size_t;
+using std::map;
 
-size_t lastSize;
 
-/* allocatedBlocks keeps track of the starting addresses of all allocated blocks
-   allocatedSizes keeps track of the corresponding blocks size
-*/
-vector<void *> allocatedBlocks;
-vector<size_t> allocatedSizes;
+
+/*struct memoryAllocated
+{
+	void * _startAddress;
+	size_t _size;
+};
+
+using std::vector;*/
+
+
+
 
 int count = 0;
+//vector <memoryAllocated> memoryMapped;
+//vector<memoryAllocated>::iterator it;
+map<void *, size_t> memoryMapped;
+
+
+void * Freeaddr = nullptr;
+
 
 
 void *mapalloc( const size_t size)
 {
-	void * addr = mmap(nullptr,size,PROT_READ|PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS,-1,0);
-	allocatedBlocks.push_back(addr); // Add starting address to vector keeping track of allocated blocks 
-	allocatedSizes.push_back(size); // Add the size of the memory block into the vector keeping track of sizes
-	++count;
-	lastSize = size;
+	void * addr = mmap(Freeaddr,size,PROT_READ|PROT_WRITE,MAP_SHARED|MAP_ANONYMOUS,-1,0);
+	Freeaddr = (void *)((char *)Freeaddr + size);
+	memoryMapped[addr] = size;
+	
+	
 	
 	return addr;
 }
 
-void mapFree( void *block)
+
+
+void mapFree( void *block) // Change the memory size
 {
-	int munmapSuccess = munmap( block, lastSize);
+	
+	 int success = munmap( block, memoryMapped[block]);
+	 if(!success) std::cout << "Deallocation Succeeded" <<std::endl;
 }
 
 //Function to easily run multiple test cases. Only for debugging  
@@ -36,23 +54,19 @@ void test(size_t bytes)
 {
 	std::cout<<"Allocating Memory"<<std::endl;
 	void * mem = mapalloc(bytes);
-	if(mem !=MAP_FAILED)
+	if(mem !=nullptr)
 	{
 		std::cout<<"mmap succeeded"<<std::endl;
-		std::cout<<"Starting Address ="<<allocatedBlocks.back()<<std::endl;
-		std::cout<<allocatedSizes[count]<<std::endl;
-		
+		std::cout<<"Starting Address ="<<Freeaddr<<std::endl;
 	}
 	mapFree(mem);
-	std::cout<<"Deallocation succeeded"<<std::endl;
 }
 int main()
 {
-	test(3);
-	test(6);
-	test(32);
-	test(12);
-	test(10);
+	for(int i=0;i<100000;i++)
+	{
+		test(i);
+	}
 	return 0;
 }
 		
