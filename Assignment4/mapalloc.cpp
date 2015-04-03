@@ -28,7 +28,7 @@ void *mapalloc( const size_t size)
 	}
 	else
 	{ 
-		Freeaddr = (void *)((char *)Freeaddr + size); // Ofset the next free address pointer by 'size' bytes
+		Freeaddr = (void *)((char *)Freeaddr + size); // Offset the next free address pointer by 'size' bytes
 		memoryMapped[addr] = size;
 		return addr;
 	}
