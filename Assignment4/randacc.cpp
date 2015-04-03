@@ -10,17 +10,18 @@
 using std::cout;
 using std::cin;
 using std::endl;
+
 #include<cstdlib> // for size_t
 using std::size_t;
-#include<string>
+
+#include<string> // for std::string 
 using std::string;
+
 #include<unistd.h> // for _exit, write, close
-#include<sys/mman.h> // for mmao, munmap, related constants
+#include<sys/mman.h> // for mmap, munmap, related constants
 #include<fcntl.h> // for open, related constants
 #include<sys/stat.h> // for stat, struct stat
-#include<sys/types.h> // for off_t
-
-//Possible debuggin includes only 
+#include<sys/types.h> // for off_t, ssize_t
 #include<cerrno> // for errno 
 #include<string.h> // for strerror
 
@@ -37,7 +38,6 @@ off_t getFileSize(const string & filepath)
 		return -1;
 	}
 	
-	cout <<"FileSize = " <<fileinfo.st_size << endl;
 	return fileinfo.st_size;
 	
 	
@@ -50,7 +50,7 @@ void closeFile(int fd)
 	int closeFailed = close(fd);
 	if(closeFailed)
 	{
-		cout <<" Failed to close file: exiting  " <<endl;
+		cout <<" Failed to close file due to error: " << strerror(errno) << " Exiting"  <<endl;
 		_exit(1);
 	}
 	else
@@ -67,7 +67,7 @@ void readFile(string & filepath)
 	int fd = open(filepath.c_str(),O_CREAT|O_RDONLY,0644);
 	if(fd == -1)
 	{
-		cout << "Could not open file" << filepath <<" exiting" <<endl;
+		cout << "Could not open file" << filepath <<" due to error: " << strerror(errno) << " Exiting"  <<endl;
 		_exit(1);
 	}
 	
@@ -87,48 +87,61 @@ void readFile(string & filepath)
 	}
 	 
 	 char*data = (char*)addr;
-	 if(data[request+1]=='\n')
-	 {
-		 request = request+1;
-		 cout << "Modified request is :" << request <<endl;
-	 }
-	 cout<< "current request is : "<<request <<endl;
 	 cout<< "Requested record is: "<<data[request]<<data[request+1] <<endl;
-
+	 
+	 closeFile(fd);
+	
 }
 
 //Modify the requested record 
 void modifyFile(string & filepath)
 {
-	int fd = open(filepath.c_str(),O_CREAT|O_RDWR,0644);
+	const int SIZE = 200; //Size to write in bytes
+	ssize_t dummy; 
+	int fd = open(filepath.c_str(),O_CREAT|O_RDWR|O_APPEND,0644);
 	if(fd == -1)
 	{
-		cout << "Could not open file" << filepath <<" exiting" <<endl;
+		cout << "Could not open file" << filepath <<" due to error: " << strerror(errno) << " Exiting"  <<endl;
 		_exit(1);
 	}
+	
+	//Write intial content of file, If exits, then append to end of file 
+	for(size_t i = 0;i < SIZE+10 ; i++)
+	{
+		dummy = write(fd, "-", 1);
+	}
+	dummy = write(fd, "\n", 1);
+	
 	
 	void *addr = mmap(nullptr, getFileSize(filepath), PROT_WRITE|PROT_READ,MAP_SHARED,fd,0);
 	
 	if(addr == MAP_FAILED)
 	{
 		cout << "Failed to get memory : Exiting" << endl;
-		cout << "errno = " << strerror(errno) << endl;;
+		cout << "errno = " << strerror(errno) << endl;
 		_exit(1);
 	}
 	
-	int request; // User's requested index
-	int data; // Record stored in the the requested index
+	off_t request; // User's requested index
+	int data; // Record to be stored in the the requested index
 	
 	cout << "Enter Record to modify (0-99) : " << endl;
 	cin >> request;
 	cout << "Enter integer to be written at position " <<request << " : " << endl;
 	cin >> data;
 	
-	char * p = (char *)addr;
-	p[request] = data;
 	
-	closeFile(fd);
+	if(request ==0)
+	{
+		off_t offset = lseek(fd, request, SEEK_SET); // + 1 as starting byte does not apply to first record (starts starts at byte 0)
+	}
+	
+	off_t offset = lseek(fd, request+1, SEEK_SET); // seek to offset request+1 (2 bytes/ record -> starting byte of each record is record+1)
+	
+	write(fd,&data , 2);
+	
 	int munmapResult = munmap ( addr,getFileSize(filepath) );
+	closeFile(fd);
 	
 }
 	
@@ -138,10 +151,10 @@ void menu(string & filepath)
 	int choice;
 	do
 	{
-		cout << "Please Select an action : " <<endl;
-		cout << "1:Read a record" <<endl;
-		cout << "2:Modify a record" <<endl;
-		cout <<"3:Quit" <<endl;
+		cout << "Please Select an action : " << endl;
+		cout << "1:Read a record" << endl;
+		cout << "2:Modify a record" << endl;
+		cout <<"3:Quit" << endl;
 		cin >>choice;
 		switch (choice)
 		{
@@ -152,7 +165,7 @@ void menu(string & filepath)
 				break;
 			case 3: _exit(1);
 				break;
-			default : cout<< "Please enter a valid choice" <<endl;
+			default : cout<< "Please enter a valid choice" <<endl <<endl;
 				break;
 		}
 	}
